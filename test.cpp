@@ -1,5 +1,6 @@
 //Include Pour IHM entrée sortie cout cin en mode console
 //un excelent tuto pour revoir tout les grands principe du c++
+//THis test.cpp ise use for Test some thing 
 //https://openclassrooms.com/fr/courses/1894236-programmez-avec-le-langage-c/1897113-decouvrez-la-notion-de-programmation-orientee-objet-poo
 
 #include <iostream>
