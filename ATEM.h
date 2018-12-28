@@ -30,6 +30,9 @@ with the ATEM library. If not, see http://www.gnu.org/licenses/.
 #include <iostream>
 #include <ctime>
 
+//JLA includ thread to keep connection alive
+#include <thread>
+
 
 
 //Include Class Personalisé
@@ -57,11 +60,12 @@ class ATEM
 	uint16_t _localPacketIdCounter;  
 	uint16_t _localPacketPingIdCounter=0; 
 		// This is our counter for the command packages we might like to send to ATEM
-	bool _hasInitialized;  			// If true, the initial reception of the ATEM memory has passed and we can begin to respond during the runLoop()
-	bool _isConnected;
+	bool _hasInitialized = false ;  			// If true, the initial reception of the ATEM memory has passed and we can begin to respond during the runLoop()
+	bool _isConnected = false ;
+	bool _isContinuConnected = false;
 	unsigned long _lastContact;			// Last time (millis) the switcher sent a packet to us.
 	unsigned long _isConnectingTime;	// Set to millis() after the connect() function was called - and it will force runLoop() to finish the connection session.
-
+	std::thread _threadAtemContinueConnet;   //JLA for not lose connections
 		// Selected ATEM State values. Naming attempts to match the switchers own protocol names
 		// Set through _parsePacket() when the switcher sends state information
 		// Accessed through getter methods
@@ -104,8 +108,11 @@ class ATEM
     void runLoop();
 	//JLA
 	bool InitAtemConnection();
-	bool AtemContinueConnet();
+	void AtemContinueConnet();
 	bool AtemGetCommands();
+	void sendPing();
+	//End JLA New Methode
+
 	bool isConnectionTimedOut();
 	bool isConnected();
 	void delay(const unsigned int delayTimeMillis);

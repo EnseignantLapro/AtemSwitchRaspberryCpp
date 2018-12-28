@@ -22,7 +22,7 @@ with the ATEM library. If not, see http://www.gnu.org/licenses/.
 
 
 using namespace std;
-//Fonction rajouté conversion Arduino->c++
+//JLA Fonction rajouté conversion Arduino->c++
 unsigned long millis()
 {
 	unsigned long sysTime = time(0);
@@ -30,24 +30,27 @@ unsigned long millis()
 	
 }
 
-//TOTO concatenation 2 * 8bit => to 16 bit value
+//JLA concatenation 2 * 8bit => to 16 bit value
 unsigned int word(uint8_t value15_8,uint8_t value0_7)
 {
 	return value15_8 << 8 | value0_7;
    
 }
 
+//JLA portage arduino to c++
 uint8_t highByte(uint16_t value15_8){
 
 	return (uint8_t)value15_8 & 0xFF;
 	
 	
 }
-
+//JLA portage arduino to c++
 uint8_t lowByte(uint16_t value0_7){
 
 	return (uint8_t)value0_7 >> 8;;
 }
+
+
 
 
 //#include <MemoryFree.h>
@@ -89,6 +92,7 @@ uint16_t ATEM::getSessionID() {
 
 /**
  * Initiating connection handshake to the ATEM switcher
+ * Modified by JLA for work on raspberry
  */
 bool ATEM::connect() {
 	_isConnectingTime = millis();
@@ -104,7 +108,7 @@ bool ATEM::connect() {
 	// Send connectString to ATEM:
 	// TODO: Describe packet contents according to rev.eng. API
 	if (_serialOutput) 	{
-  		cout << "Sending  packet connect to ATEM switcher.";
+  		cout << "Sending packet connect to ATEM switcher.";
 	}
 	//Session : 0x53, 0xAB,
 	//Client ID 0xC1
@@ -131,6 +135,8 @@ bool ATEM::connect() {
 				_Udp.write(connectHelloAnswerString,12);
 				_Udp.endPacket();
 				_isConnected = true;
+
+				
 				return  1;
 			}
 
@@ -146,6 +152,8 @@ bool ATEM::connect() {
 	return 0;
 }
 void ATEM::deconnect() {
+	_isConnected = false;
+	_threadAtemContinueConnet.join();
 	_Udp.endsock();
 }
 
@@ -160,11 +168,14 @@ bool ATEM::InitAtemConnection() {
 	bool connect = ATEM::connect();
 	return connect;
 }
+
+//Dev by JAL for work on rapsberry c++
 bool ATEM::AtemGetCommands() {
 	cout << "Get Commands Atem Television ---------------------- \n";
 
 	
 	while(_Udp.available()){
+		
 		uint16_t packetSize = 0;
 		packetSize = _Udp.parsePacket();
 		
@@ -201,9 +212,8 @@ bool ATEM::AtemGetCommands() {
 
 				//decode Packet BMD UDP Protocol
 				_parsePacket(packetLength);
-		
+				
 				_hasInitialized = true;
-			
 				
 
 			}else if (packetLength == 12 && command_flag_fACK && !command_flag_RETR){
@@ -222,12 +232,15 @@ bool ATEM::AtemGetCommands() {
 				_Udp.endPacket();
 			}else if (command_flag_ANSW && !command_flag_RETR) {
 				_parsePacket(packetLength);
+			}else if(command_flag_fACK && command_flag_RETR){
+				
+					_sendAnswerPacket(4);
+				
 			}
 			//else if : what à do with retransmission ?? because it's comming before à finish traitement of one message
 
 			//envoi accusé de reception ACK
 			//put ACK 1 and Switcher pkt id = _lastRemotePacketID
-			
 
 		}
 	}
@@ -236,29 +249,57 @@ bool ATEM::AtemGetCommands() {
 
 	cout << "END Commands Atem Television ---------------------- \n";
 	
-	if(_hasInitialized){
+	if(!_isContinuConnected){
+		//JLA launch thread to keep the connection alive
+		cout << "-ThreadGo-\n";
+		_isContinuConnected = true;
+		_threadAtemContinueConnet = std::thread(&ATEM::AtemContinueConnet,this);
+	}
+
+	if(_hasInitialized && _isContinuConnected){
 		
 		return 1;
 	}
 
+	return 0;
+
 }
 
-bool ATEM::AtemContinueConnet() {
-	cout << "Listen Atem Television --lastPack "<< _lastRemotePacketID <<"-------------------- \n";
+
+
+void ATEM::AtemContinueConnet() {
+	cout << "Listen Continue Connet - \n";
 	//send ping
-	_sendAnswerPacket(0);
-	bool activeconnection = AtemGetCommands();
+	bool activeconnection =false;
+	while (true)
+    {
+		while (!_Udp.writeavailable())
+    	{
+			activeconnection =true;
+			usleep(100000);
+		}
 
-	//send ACK for the last command _lastRemotePacketID
+		if(_Udp.writeavailable()){
+			_sendAnswerPacket(0);
+			usleep(100000);
+			activeconnection = AtemGetCommands();
+		}
 
+		if(!activeconnection){
+			break;
+		}
+		
+	}
 	cout << "END Listen Atem Television ---------------------- \n";
 	
-	return activeconnection;
 
 }
 
 
-
+// This function works only on arduino it dev by Skårhøj, SKAARHOJ, kasperskaarhoj@gmail.com
+// a rewrite another function for rapsberry
+//bool ATEM::InitAtemConnection() {
+// And bool ATEM::AtemGetCommands() {
 void ATEM::runLoop() {
 
   // WARNING:
@@ -850,6 +891,32 @@ void ATEM::_parsePacket(uint16_t packetLength)	{
  */
 // send remotePacket 0 to ping
 //packetType;  //0 PingACK //1 Init //2Retry //3Hello //4 AWSer
+
+void ATEM::sendPing()  {
+	 uint8_t packetBufferPing[12];  
+	 uint16_t returnPacketLength = 10+2;
+	 packetBufferPing[0] = returnPacketLength/256;
+ 	 packetBufferPing[1] = returnPacketLength%256;
+  
+ 	 packetBufferPing[2] = _sessionID >> 8;  // Session ID
+ 	 packetBufferPing[3] = _sessionID & 0xFF;  // Session ID
+	 packetBufferPing[0] |= 0x08;//B00001000;
+	 cout << "-Send Ping-\n";
+	
+
+	packetBufferPing[4] = 0;  // Remote Packet ID, MSB
+	packetBufferPing[5] = 0;  // Remote Packet ID, L
+	packetBufferPing[8] = 0x00;
+	packetBufferPing[9] = 0x00;
+
+	packetBufferPing[10] = _localPacketPingIdCounter/256;  // Remote Packet ID, MSB
+	packetBufferPing[11] = _localPacketPingIdCounter%256;  // Remote Packet ID, LSB
+	_localPacketPingIdCounter++;
+
+	_Udp.sendping(packetBufferPing);  
+
+}
+
 void ATEM::_sendAnswerPacket(uint16_t typePacket)  {
 
   //Answer packet:

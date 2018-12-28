@@ -60,9 +60,12 @@ class EthernetUDP
     int _KeyRead_Savepacket = 0;
     int _Size_SavepacketSend = 0;
     bool available();
+    bool writeavailable();
+    
 
     void read(uint8_t *_packetBuffer  ,int zise);
-
+    //send atem ping protocol
+    void sendping(uint8_t * packetSend);
    
     void clear_remaining();
 

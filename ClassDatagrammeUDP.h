@@ -9,7 +9,7 @@ class ClassDatagrammeUDP
     //les méthodes public de ma classs
     public :
 
-    //On utilise le mot-clé const sur des méthodes qui ne  modifie pas les membres de l'objet
+    //o On utilise le mot-clé const sur des méthodes qui ne  modifie pas les membres de l'objet
     //çà optimise votre programme
     int getNumDatagramme() const;
 

@@ -69,11 +69,17 @@ void EthernetUDP::write(uint8_t * buffer,int size){
 
 
 }
+void  EthernetUDP::sendping(uint8_t * packetSend){
+     _error_message = sendto(_sock,packetSend,12,0, (SOCKADDR*)&_switcherIP,sizeof(_switcherIP));
+}
+
+
+
 void EthernetUDP::endPacket(){
      //silence is golden
      //usleep(10000);
     _error_message = sendto(_sock,_SavepacketSend,_Size_SavepacketSend,0, (SOCKADDR*)&_switcherIP,sizeof(_switcherIP));
-    
+    _Size_SavepacketSend = 0;
     cout << "\033[1;32m";
             for(size_t i = 0; i < _error_message; i++)
             {
@@ -84,8 +90,8 @@ void EthernetUDP::endPacket(){
     if (_error_message == 0){
         fprintf(stderr, "socket() Envoi message error : %s\n", strerror(errno));  
     }
-
-    _Size_SavepacketSend = 0;
+   
+    
         
 }
 
@@ -134,6 +140,17 @@ uint16_t EthernetUDP::parsePacket(){
   // There aren't any packets available
 
 }
+
+ bool EthernetUDP::writeavailable(){
+     if (_Size_SavepacketSend ==0){
+         return true;
+     }
+    
+    return false;
+
+ }
+    
+
 bool EthernetUDP::available(){
      //silence is golden
    
@@ -144,12 +161,14 @@ bool EthernetUDP::available(){
         ioctl (_sock,FIONREAD,&_SizepacketBuff);
         if  (_SizepacketBuff > 0)
         {
+            
             return true;
         }else{
             usleep(40000);
         }
     }
     cout << "No Packet in buffer\n";
+    
     return false;
     
     

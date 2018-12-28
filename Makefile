@@ -4,7 +4,7 @@
 # sur all: on a une dependance test.o du coup on doit compiler la cible test.o
 # sur all: on a une dependance ClassDatagrammeUDP.o du coup on doit compiler la cible ClassDatagrammeUDP.o
 all: EthernetUDP.o ATEM.o TestAtem.o
-	g++ EthernetUDP.o ATEM.o TestAtem.o -o  TestAtem -g
+	g++ EthernetUDP.o ATEM.o TestAtem.o -o  TestAtem -g -pthread
 
 #creation de nos fichiers .o
 EthernetUDP.o: EthernetUDP.cpp EthernetUDP.h
