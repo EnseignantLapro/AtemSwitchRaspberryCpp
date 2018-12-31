@@ -14,12 +14,14 @@
 
 // Include ATEM library and make an instance:
 #include "ATEM.h"
+#include "Launchpadmini/Launchpadmini.h"
 #include <string>
 #include <sstream>
 
 using namespace std;
 
 ATEM AtemSwitcher;
+ Launchpadmini LaunchPad;
 
 //#include <MemoryFree.h>
 
@@ -55,11 +57,17 @@ void setup()
 
 int main()
 {
-  //I don't anderstand why this variable must declare and not use => else not input keybord work
+  
   
   setup();
+ 
+  unsigned char  dataLaunchPad[] = { 0x90, 0x00, 0x07};
+    
 
 
+
+
+    
 	//Get input
 
   
@@ -101,20 +109,41 @@ int main()
         int chanel = 0;
         while (true)
         {
-
-          cin.clear(); cin.sync();
-          sleep(3);
-
-          if (chanel > 5)
-          {
-            chanel = 0;
-          }
-          chanel++;
+          
           cout << "Selection Program change! : ";
-          AtemSwitcher.changeProgramInput(chanel);
-          //in this test if the answer is To long => the switcher is disconnect :D haha
-          cout << " \n Chanel choose is "<< chanel <<" "<< endl;
+          LaunchPad.Receive(dataLaunchPad,3);
+          printf("read LaunchPad %x %x %x",dataLaunchPad[0],dataLaunchPad[1],dataLaunchPad[2]);
 
+          if(dataLaunchPad[1]==0x00)AtemSwitcher.changeProgramInput(0);
+          if(dataLaunchPad[1]==0x01)AtemSwitcher.changeProgramInput(1);
+          if(dataLaunchPad[1]==0x02)AtemSwitcher.changeProgramInput(2);
+          if(dataLaunchPad[1]==0x03)AtemSwitcher.changeProgramInput(3);
+          if(dataLaunchPad[1]==0x04)AtemSwitcher.changeProgramInput(4);
+          if(dataLaunchPad[1]==0x05)AtemSwitcher.changeProgramInput(5);
+          if(dataLaunchPad[1]==0x06)AtemSwitcher.changeProgramInput(6);
+          if(dataLaunchPad[1]==0x6F)break;
+         
+          dataLaunchPad[1]=0x01;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+           dataLaunchPad[1]=0x02;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+          dataLaunchPad[1]=0x03;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+          dataLaunchPad[1]=0x04;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+          dataLaunchPad[1]=0x05;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+          dataLaunchPad[1]=0x06;
+          dataLaunchPad[2]=0x00;
+          LaunchPad.Send(dataLaunchPad,3);
+          dataLaunchPad[1]=AtemSwitcher.getProgramInput();
+          dataLaunchPad[2]=0x07;
+          LaunchPad.Send(dataLaunchPad,3);
           //
           //getline(cin, InputChanelChoice);
           //stringstream(InputChanelChoice) >> my_InputChanelChoice_int;			

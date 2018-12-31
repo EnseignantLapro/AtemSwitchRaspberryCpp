@@ -161,7 +161,7 @@ bool EthernetUDP::available(){
         ioctl (_sock,FIONREAD,&_SizepacketBuff);
         if  (_SizepacketBuff > 0)
         {
-            
+            //segment UDP présent
             return true;
         }else{
             usleep(40000);

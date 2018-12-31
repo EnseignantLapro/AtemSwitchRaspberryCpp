@@ -11,13 +11,14 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <errno.h>
-#include <string.h>
+#include <string>
 
 //Include pour mes classes que je developpe
 //on utile des " " car la ce sont les .h de notre dossier et non du dossier du le systeme pour les < >
-#include "ClassDatagrammeUDP.h"
+
 
 
 
@@ -109,15 +110,15 @@ int main2() {
         char   sin_zero[8]; // non utilisé
     }; 
     */
-    //on appelera notre structure de paramétrage sin
-    SOCKADDR_IN sin;
+    //on appelera notre structure de paramétrage InfoServer
+    SOCKADDR_IN InfoServer;
     //htonl est une fonction qui donne automatiquement IP de notre machine
     // met on peut aussi la forcer sin.sin_addr.s_addr = inet_addr("127.0.0.1");inet_addr("192.168.1.98");  
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);  //inet_addr("192.168.1.98");//htonl(INADDR_ANY);//INADDR_LOOPBACK;//inet_addr("192.168.1.98"); //htonl(INADDR_LOOPBACK); 
-    sin.sin_family = AF_INET;
+    InfoServer.sin_addr.s_addr = htonl(INADDR_ANY);  //inet_addr("192.168.1.98");//htonl(INADDR_ANY);//INADDR_LOOPBACK;//inet_addr("192.168.1.98"); //htonl(INADDR_LOOPBACK); 
+    InfoServer.sin_family = AF_INET;
     //htonl est une fonction qui donne le port spécifié en paramètre
-    sin.sin_port = htons(PORT2);
-    printf("Listage du port %d...\n", PORT2);
+    InfoServer.sin_port = htons(9012);
+    printf("Listage du port %d...\n", 9012);
 
     //pour appliquer ses paramétres (sinon la strucuture est dans le vide un peu comme en série getcomstat et setcomstat)
     /*on utilise pour cela le prototype :
@@ -128,18 +129,24 @@ int main2() {
     // c'est un pointeur qui est attendu or nous on a une struture donc on va le caster notre sin en mettant (SOCKADDR*)&
     - addrlen c'est la taille de notre structure qui peux varier selon les infos. */
     int error_message;
-    error_message = ::bind(sock, (SOCKADDR*)&sin, sizeof(sin));
+    error_message = ::bind(sock, (SOCKADDR*)&InfoServer, sizeof(InfoServer));
 
     //Fin paramétrage de socket -------------
     //UDP recupérer le message--------------
 
-    char buffer[24];
-    buffer[0]='\0';
+    char buffer[1500];
+    memset (buffer,'\0',1500);
     sockaddr_in _from;
     socklen_t fromlen = sizeof(_from);
     error_message = recvfrom(sock, buffer, 1500, 0, reinterpret_cast<sockaddr*>(&_from), &fromlen);
-    fprintf(stderr, "socket() message: %s\n", strerror(errno));
-    std::cout << "Recu : " << buffer << " de " << inet_ntoa(_from.sin_addr) << ":" << ntohs(_from.sin_port) << std::endl;
+    if(error_message<1){
+        fprintf(stderr, "socket() message: %s\n", strerror(errno));
+    }else{
+        printf(" IP : %s ", inet_ntoa(_from.sin_addr));
+        printf(" Port : %d ", ntohs(_from.sin_port));
+        printf("Recu : %s ", buffer);
+    }
+
     //FIN UDP recuperer le message-----------
 
     //Mise en écoute de notre socket que pour SOCK_STREAM---------
@@ -173,8 +180,8 @@ int main2() {
     //fin de connexion 
 
     close(sock);
-
-
+    string key;
+    getline(cin, key); 
     //LE CLIENT UDP 
     //on va utiliser les mêmes  types de variable que le server UDP
 
