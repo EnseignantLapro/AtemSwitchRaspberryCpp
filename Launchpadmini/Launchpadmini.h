@@ -10,16 +10,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <termios.h>
+#include <thread>
+#include "../ATEM.h"
  // POSIX terminal control definitions
-#include <asm/termbits.h>
+//#include <asm/termbits.h>
 
 
 class Launchpadmini
 {
     //les membres de ma classs
     private :
-    int _numDatagramme;
-
+    unsigned char  _dataLaunchPad[3];
+    ATEM *_AtemSwitcher;
+    std::thread _threadRefreshLaunchpad; 
+    bool _threadOn = false;
     //les méthodes public de ma classs
     
     public:
@@ -33,33 +38,26 @@ class Launchpadmini
     ~Launchpadmini();
 
     bool Send( unsigned char  * data,int len);
+    bool SendButtonPushRed( unsigned int NumButton);
+    bool SendButtonPushLowRed( unsigned int NumButton);
+    bool SendButtonPushLowGreen( unsigned int NumButton);
+    bool SendButtonPushLowYellow( unsigned int NumButton);
+    bool SendButtonOff( unsigned int NumButton);
+    bool SendResetLaunchpad();
+    
     int Receive( unsigned char  * data, int len);
     bool IsOpen(void);
     void Close(void);
     bool Open(std::string deviceName, int baud);
-    bool NumberByteRcv(int &bytelen);
+   
+   void MappingWithAtemBlackMagic();
+
+   void LaunchMappingThread(ATEM *AtemSwitcher);
+   void RefreshMappingWithAtemBlackMagic();
+   
 
 };
 
-/* #define NCCS 19
-#define CS8	0000060
-#define CLOCAL	0004000
-#define CREAD	0000200
-#define VTIME 5
-#define VMIN 6
-#define CBAUD	0010017
-#define BOTHER 0010000
-#define	TCIOFLUSH	2
-#define TCSETS		0x5402
-#define TCFLSH		0x540B
-
-
-
-
-
-#define TCGETS2		_IOR('T', 0x2A, struct termios2)
-#define TCSETS2		_IOW('T', 0x2B, struct termios2) */
-
-
+unsigned int smallwordbutton(uint8_t value15_8,uint8_t value0_7);
 
 #endif

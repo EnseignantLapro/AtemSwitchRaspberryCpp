@@ -97,7 +97,7 @@ void EthernetUDP::endPacket(){
 
 //Permet de compter le nombre d'octet du message
 uint16_t EthernetUDP::WaitePacket(){
-    clear_remaining();
+/*     clear_remaining();
     _error_message = 0;
     if(_sock>0){
         socklen_t fromlen = sizeof(_Udpfrom);
@@ -108,7 +108,8 @@ uint16_t EthernetUDP::WaitePacket(){
       
         }
     }
-    return _error_message;
+    return _error_message; */
+    return 0;
 
 }
 
@@ -119,21 +120,21 @@ uint16_t EthernetUDP::parsePacket(){
     clear_remaining();
     
     
-    
    
-    _remaining = _SizepacketBuff;
-    if(_remaining > 0){
+   //_SizepacketBuff is size of available packet on buffer
+
+    if(available()){
         socklen_t fromlen = sizeof(_Udpfrom);
-         //usleep(20000);
-        _error_message = recvfrom(_sock, _Savepacket, _remaining, 0, reinterpret_cast<sockaddr*>(&_Udpfrom), &fromlen);
-        if (_error_message > 0)
+        
+        //Use 1500 buffer because ioctl(conn_fd, FIONREAD, &len); have note the exact size
+        _remaining = recvfrom(_sock, _Savepacket, 1500, 0, reinterpret_cast<sockaddr*>(&_Udpfrom), &fromlen);
+        if (_error_message < 1)
         {
-            _remaining = _error_message;
+            fprintf(stderr, "socket() Envoi message error : %s\n", strerror(errno)); 
       
-        }else{
-            fprintf(stderr, "socket() Envoi message error : %s\n", strerror(errno));  
         }
     }
+    
     
     return _remaining;
   
@@ -154,12 +155,13 @@ uint16_t EthernetUDP::parsePacket(){
 bool EthernetUDP::available(){
      //silence is golden
    
-    
+    int size = 0;
     for(size_t i = 0; i < 10; i++)
     {
         
-        ioctl (_sock,FIONREAD,&_SizepacketBuff);
-        if  (_SizepacketBuff > 0)
+        ioctl (_sock,FIONREAD,&size);
+        
+        if  (size > 0)
         {
             //segment UDP présent
             return true;
@@ -176,15 +178,15 @@ bool EthernetUDP::available(){
 void EthernetUDP::read(uint8_t *_packetBuffer  ,int zise){
     
    
-
+    
     if (_remaining > 0){
 
-      
-       size_t i=0;
+        
+        size_t i=0;
         size_t k=_KeyRead_Savepacket;
-       size_t imax= _KeyRead_Savepacket + _remaining;
-       size_t imax2= _KeyRead_Savepacket + zise;
-       size_t j=0;
+        size_t imax= _KeyRead_Savepacket + _remaining;
+        size_t imax2= _KeyRead_Savepacket + zise;
+        size_t j=0;
         if (_remaining <= zise) {
             // data should fit in the buffer
             
@@ -194,6 +196,7 @@ void EthernetUDP::read(uint8_t *_packetBuffer  ,int zise){
             for( i = _KeyRead_Savepacket; i < (imax); i++)
             {
                 _packetBuffer[j]=_Savepacket[i];
+               
                 _remaining --;
                 j++;
             }
@@ -205,6 +208,7 @@ void EthernetUDP::read(uint8_t *_packetBuffer  ,int zise){
             for( i = _KeyRead_Savepacket; i < (imax2); i++)
             {
                 _packetBuffer[j]=_Savepacket[i];
+                
                 _remaining --;
                 j++;
             }
@@ -262,6 +266,7 @@ void EthernetUDP::read(uint8_t *_packetBuffer  ,int zise){
     else
     {
         _KeyRead_Savepacket = 0;
+         
     }
 
     // If we get here, there's no data available or recv failed

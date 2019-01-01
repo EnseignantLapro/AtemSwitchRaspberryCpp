@@ -1,6 +1,13 @@
 # AtemSwitchRaspberryCpp
 Portage of the https://github.com/kasperskaarhoj arduino Code To Raspberry C++ for ATEM Software Control 6.3
 
+---COMMIT 4 : -----
+
+Mapping with Novation Launchpad test ok for chanel Program / chanel Preview / cut and style Transition /
+Add new thread for the mapping of launchpad . It's for update launchpad color when atem switcher have new info.
+
+There is a bug when Atem not responding. there is no automatic reconnexion for this moment
+
 ---COMMIT 3 : -----
 Tryin to take input from an USB midi controller. LaunchPad Mini Novation
 

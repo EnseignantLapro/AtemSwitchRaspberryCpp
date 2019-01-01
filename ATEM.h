@@ -219,5 +219,7 @@ class ATEM
 	void setWipeReverseDirection(bool reverse);
 };
 
+unsigned int word(uint8_t value15_8,uint8_t value0_7);
+
 #endif
 

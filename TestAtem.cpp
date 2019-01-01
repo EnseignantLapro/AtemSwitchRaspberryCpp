@@ -32,62 +32,30 @@ uint8_t mac[6];     // Will hold the Arduino Ethernet shield/board MAC address (
 
 void setup()
 {
-
-  // Start the Ethernet, Serial (debugging) and UDP:
+  //log consol True or false
+  AtemSwitcher.serialOutput(false);
 
   SOCKADDR_IN sin;
   sin.sin_addr.s_addr = inet_addr("192.168.1.3"); //inet_addr("192.168.1.98");//htonl(INADDR_ANY);//INADDR_LOOPBACK;//inet_addr("192.168.1.98"); //htonl(INADDR_LOOPBACK);
   sin.sin_family = AF_INET;
   //htonl est une fonction qui donne le port spécifié en paramètre
   sin.sin_port = htons(9910);
-
-  cout << " ATEM Switcher IP Address: " << inet_ntoa(sin.sin_addr) << "\n";
-
-  //log consol True or false
-  AtemSwitcher.serialOutput(false);
-
   // Initialize a connection to the switcher:
   AtemSwitcher.begin(sin);
+  cout << " ATEM Switcher IP Address: " << inet_ntoa(sin.sin_addr) << "\n";
 
-  //AtemSwitcher.connect();
-
-  // Shows free memory:
-  //  Serial << F("freeMemory()=") << freeMemory() << "\n";
 }
 
 int main()
 {
   
-  
   setup();
  
-  unsigned char  dataLaunchPad[] = { 0x90, 0x00, 0x07};
+  unsigned char  dataLaunchPad[] = { 0x90, 0x00, 0x00};
     
-
-
-
-
-    
-	//Get input
-
-  
-  
-  
-
-  
-
- 
-
-
-
-
-
-
-
   // Check for packets, respond to them etc. Keeping the connection alive!
   // VERY important that this function is called all the time - otherwise connection might be lost because packets from the switcher is
   // overlooked and not responded to.
-
  
   bool testAtem = true;
   
@@ -105,49 +73,54 @@ int main()
 
         //test auto change input 3
         
-
+        LaunchPad.LaunchMappingThread(&AtemSwitcher);
         int chanel = 0;
         while (true)
         {
           
           cout << "Selection Program change! : ";
           LaunchPad.Receive(dataLaunchPad,3);
-          printf("read LaunchPad %x %x %x",dataLaunchPad[0],dataLaunchPad[1],dataLaunchPad[2]);
-
-          if(dataLaunchPad[1]==0x00)AtemSwitcher.changeProgramInput(0);
-          if(dataLaunchPad[1]==0x01)AtemSwitcher.changeProgramInput(1);
-          if(dataLaunchPad[1]==0x02)AtemSwitcher.changeProgramInput(2);
-          if(dataLaunchPad[1]==0x03)AtemSwitcher.changeProgramInput(3);
-          if(dataLaunchPad[1]==0x04)AtemSwitcher.changeProgramInput(4);
-          if(dataLaunchPad[1]==0x05)AtemSwitcher.changeProgramInput(5);
-          if(dataLaunchPad[1]==0x06)AtemSwitcher.changeProgramInput(6);
           if(dataLaunchPad[1]==0x6F)break;
-         
-          dataLaunchPad[1]=0x01;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-           dataLaunchPad[1]=0x02;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-          dataLaunchPad[1]=0x03;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-          dataLaunchPad[1]=0x04;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-          dataLaunchPad[1]=0x05;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-          dataLaunchPad[1]=0x06;
-          dataLaunchPad[2]=0x00;
-          LaunchPad.Send(dataLaunchPad,3);
-          dataLaunchPad[1]=AtemSwitcher.getProgramInput();
-          dataLaunchPad[2]=0x07;
-          LaunchPad.Send(dataLaunchPad,3);
-          //
-          //getline(cin, InputChanelChoice);
-          //stringstream(InputChanelChoice) >> my_InputChanelChoice_int;			
+          //Programme Button
+          if(dataLaunchPad[1]==0x00)AtemSwitcher.changeProgramInput(1);
+          if(dataLaunchPad[1]==0x01)AtemSwitcher.changeProgramInput(2);
+          if(dataLaunchPad[1]==0x02)AtemSwitcher.changeProgramInput(3);
+          if(dataLaunchPad[1]==0x03)AtemSwitcher.changeProgramInput(4);
+          if(dataLaunchPad[1]==0x04)AtemSwitcher.changeProgramInput(5);
+          if(dataLaunchPad[1]==0x10)AtemSwitcher.changeProgramInput(6);
+          if(dataLaunchPad[1]==0x05)AtemSwitcher.changeProgramInput(0);
+          
+          //Preview Button
+          if(dataLaunchPad[1]==0x20)AtemSwitcher.changePreviewInput(1);
+          if(dataLaunchPad[1]==0x21)AtemSwitcher.changePreviewInput(2);
+          if(dataLaunchPad[1]==0x22)AtemSwitcher.changePreviewInput(3);
+          if(dataLaunchPad[1]==0x23)AtemSwitcher.changePreviewInput(4);
+          if(dataLaunchPad[1]==0x24)AtemSwitcher.changePreviewInput(5);
+          if(dataLaunchPad[1]==0x30)AtemSwitcher.changePreviewInput(6);
+          if(dataLaunchPad[1]==0x25)AtemSwitcher.changePreviewInput(0);
 
+          //transition Button
+          if(dataLaunchPad[1]==0x40)AtemSwitcher.changeTransitionType(0);
+          if(dataLaunchPad[1]==0x41)AtemSwitcher.changeTransitionType(1);
+          if(dataLaunchPad[1]==0x42)AtemSwitcher.changeTransitionType(2);
+          //Preview Transition
+          //when push inverse the TransitionPreview true => false , and false become true
+          if(dataLaunchPad[1]==0x50)AtemSwitcher.changeTransitionPreview(!AtemSwitcher.getTransitionPreview());
+          //CUT CUT AUTO
+          if(dataLaunchPad[1]==0x52){
+            AtemSwitcher.doCut();
+            dataLaunchPad[1]=smallwordbutton(4,2);
+            dataLaunchPad[2]=0x1E;
+            LaunchPad.Send(dataLaunchPad,3);
+          }
+          if(dataLaunchPad[1]==0x53){
+            AtemSwitcher.doAuto();
+            dataLaunchPad[1]=smallwordbutton(4,3);
+            dataLaunchPad[2]=0x1E;
+            LaunchPad.Send(dataLaunchPad,3);
+          }
+          //NextTransition On Air ( put inverse of actual bool)
+          if(dataLaunchPad[1]==0x45)AtemSwitcher.changeUpstreamKeyOn(1,!AtemSwitcher.getUpstreamKeyerStatus(1));
 
         }
 
