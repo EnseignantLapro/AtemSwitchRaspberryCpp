@@ -31,7 +31,7 @@ void Launchpadmini::RefreshMappingWithAtemBlackMagic()
    
    
    while(_threadOn){
-      usleep(50000);
+      usleep(100000);
       MappingWithAtemBlackMagic();
       //set Programm On Pad
       if(_AtemSwitcher->getProgramInput() < 6){
@@ -97,14 +97,18 @@ Launchpadmini::~Launchpadmini()
 {
    _threadOn = false;
    _threadRefreshLaunchpad.join();
+
    if(handle >=0) Close();
       
 }
 
 void Launchpadmini::Close(void)
 {
+   _threadOn = false;
+   _threadRefreshLaunchpad.join();
    if(handle >=0)
       close(handle);
+       
    handle = -1;
 }
 
@@ -120,7 +124,8 @@ bool Launchpadmini::Open(string deviceName , int baud)
        fprintf(stderr, "OpenDevice : %s\n", strerror(errno));
        return false;
     }
-    
+    //off all button 
+    SendResetLaunchpad();
     return true;
 }
 
@@ -224,8 +229,7 @@ int  Launchpadmini::Receive( unsigned char  * data, int len)
 void Launchpadmini::MappingWithAtemBlackMagic(){
       //Reset Button Color for new mappin
       
-      //off all button 
-      SendResetLaunchpad();
+      
 
       //low red for inputprogram
       for(size_t i = 0; i < 7; i++){

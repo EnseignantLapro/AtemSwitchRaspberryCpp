@@ -1,6 +1,10 @@
 # AtemSwitchRaspberryCpp
 Portage of the https://github.com/kasperskaarhoj arduino Code To Raspberry C++ for ATEM Software Control 6.3
 
+---COMMIT 5 : -----
+
+Now the App reconnect auto ! 
+
 ---COMMIT 4 : -----
 
 Mapping with Novation Launchpad test ok for chanel Program / chanel Preview / cut and style Transition /

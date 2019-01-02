@@ -97,7 +97,7 @@ bool ATEM::connect()
 	_hasInitialized = false;
 	_isConnected = false;
 	_lastContact = 0;
-	_Udp.begin(_switcherIP);
+	
 
 	// Setting this, because even though we haven't had contact, it constitutes an attempt that should be responded to at least:
 	_lastContact = millis();
@@ -113,13 +113,18 @@ bool ATEM::connect()
 	uint8_t connectHello[] = {
 		0x10, 0x14, 0x53, 0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 	uint16_t packetLength = 0;
+	if(_reconnect)connectHello[0]=0x30;
 	while (true)
 	{
-		if (_serialOutput)
-			cout << "Send init ";
+		if (_serialOutput) cout << "Send init ";
+		
 		_Udp.write(connectHello, 20);
 		_Udp.endPacket();
-
+		_reconnect = true;
+		if(_reconnect)connectHello[0]=0x30;
+		//retransmition
+		
+		
 		//Read Init Reponse you have to wait à little the response
 		if (_Udp.available() && _Udp.parsePacket() == 20)
 		{
@@ -138,23 +143,20 @@ bool ATEM::connect()
 				_Udp.write(connectHelloAnswerString, 12);
 				_Udp.endPacket();
 				_isConnected = true;
-
-				return 1;
+				_reconnect = true;
+				return true;
 			}
 		}
 		else
 		{
-			if (2000 < (unsigned long)millis())
+			if (_lastContact + 2000 < (unsigned long)millis())
 			{
-				if (_serialOutput)
-				{
-					cout << "Timeout waiting for ATEM switcher response";
-				}
-				break;
+				cout << "Timeout waiting for ATEM switcher response";
+				return false;
 			}
 		}
 	}
-	return 0;
+	return false;
 }
 void ATEM::deconnect()
 {
@@ -172,6 +174,9 @@ void ATEM::deconnect()
 bool ATEM::InitAtemConnection()
 {
 	cout << "Init Atem Television studio ---------------------- \n";
+	_Udp.begin(_switcherIP);
+	//it's a first connection
+	_reconnect = false;
 	bool connect = ATEM::connect();
 	return connect;
 }
@@ -246,6 +251,8 @@ bool ATEM::AtemGetCommands()
 				connectHelloAnswerString[3] = _sessionID & 0xFF; // Session ID
 				_Udp.write(connectHelloAnswerString, 12);
 				_Udp.endPacket();
+				_reconnect = false;
+				_hasInitialized = true;
 			}
 			else if (command_flag_ANSW && !command_flag_RETR)
 			{
@@ -253,8 +260,16 @@ bool ATEM::AtemGetCommands()
 			}
 			else if (command_flag_fACK && command_flag_RETR)
 			{
-
+				
 				_sendAnswerPacket(4);
+			}else if (command_flag_HELO){ // I don't know what I do with Hello Paquet
+				
+				uint8_t connectHello[] = {
+				0x30, 0x14, 0x53, 0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+				connectHello[2] = _sessionID >> 8;   // Session ID
+				connectHello[3] = _sessionID & 0xFF; // Session ID
+				_Udp.write(connectHello, 20);
+				_Udp.endPacket();
 			}
 			//else if : what à do with retransmission ?? because it's comming before à finish traitement of one message
 
@@ -286,7 +301,7 @@ bool ATEM::AtemGetCommands()
 
 void ATEM::AtemContinueConnet()
 {
-	cout << "Listen Continue Connet - \n";
+	cout << "Listen Continue Connect thread - \n";
 	//send ping
 	bool activeconnection = false;
 	while (true)
@@ -299,8 +314,8 @@ void ATEM::AtemContinueConnet()
 
 		if (_Udp.writeavailable())
 		{
-			
-			_sendAnswerPacket(0);
+			//send Ping only if th init is ok don't send ping if is reconnect is in progress
+			if(!_reconnect)_sendAnswerPacket(0);
 			
 			usleep(100000);
 			
@@ -312,8 +327,28 @@ void ATEM::AtemContinueConnet()
 		{
 			break;
 		}
+
+		//test if atem is online 
+		if (_lastContact + 2000 < (unsigned long)millis())
+		{
+			//retry connection
+			cout << "Connection lost ---------------------- \n";
+			bool whilereconnect = false;
+	        while(!whilereconnect){
+				sleep(1);
+				_lastRemotePacketID=0;
+				_localPacketIdCounter=0;  
+				_localPacketPingIdCounter=0; 
+				_reconnect = true;
+				whilereconnect = connect();		
+				printf("Try Reconnction  \n");
+			}
+		}
+
 	}
-	cout << "END Listen Atem Television ---------------------- \n";
+
+	cout << "Listen EDN Continue Connect thread - \n";
+	
 }
 
 // This function works only on arduino it dev by Skårhøj, SKAARHOJ, kasperskaarhoj@gmail.com
@@ -1104,7 +1139,7 @@ void ATEM::_sendAnswerPacket(uint16_t typePacket)
 		_packetBuffer[5] = _lastRemotePacketID % 256; // Remote Packet ID, LSB
 
 		_packetBuffer[8] = 0x00; // Remote Packet ID, MSB
-		_packetBuffer[9] = 0x00; // Remote Packet ID, LSB
+		_packetBuffer[9] = 0x5F; // Remote Packet ID, LSB
 		_packetBuffer[10] = 0;   // Remote Packet ID, MSB
 		_packetBuffer[11] = 0;   // Remote Packet ID, LSB
 	}

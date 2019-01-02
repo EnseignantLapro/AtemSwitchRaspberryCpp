@@ -62,6 +62,7 @@ class ATEM
 		// This is our counter for the command packages we might like to send to ATEM
 	bool _hasInitialized = false ;  			// If true, the initial reception of the ATEM memory has passed and we can begin to respond during the runLoop()
 	bool _isConnected = false ;
+	bool _reconnect = false ;
 	bool _isContinuConnected = false;
 	unsigned long _lastContact;			// Last time (millis) the switcher sent a packet to us.
 	unsigned long _isConnectingTime;	// Set to millis() after the connect() function was called - and it will force runLoop() to finish the connection session.

@@ -125,6 +125,8 @@ int main()
         }
 
         cout << "\033[1;31m";
+        AtemSwitcher.deconnect();
+        LaunchPad.Close();
         cout << "Fin du test Atem!\n";
         cout << "\033[0m\n";
       }
